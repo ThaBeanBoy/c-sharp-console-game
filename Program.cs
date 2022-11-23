@@ -45,30 +45,76 @@ namespace console_game
         public int NumOfBatteries { get; }
 
         private char[,] World;
+        public struct Coordinates
+        {
+            public int X;
+            public int Y;
+
+            public Coordinates(int x, int y)
+            {
+                X = x;
+                Y = y;
+            }
+        }
+        private class Player
+        {
+            //Player properties
+            public Coordinates Coordinates { get; set; }
+            public int NumOfBatteries { get; }
+
+            //Player constructor
+            public Player(Coordinates newCoordinates)
+            {
+                Coordinates = newCoordinates;
+                NumOfBatteries = 1;
+            }
+        }
+
+        private Player Player1 { get; }
+        Coordinates[] Batteries;
+
+        private int NumOfTurns;
         private bool Won;
         private const int PitSpawnChance = 15;
+        private enum GAME_CHARACTER
+        {
+            CHR_EMPTY_SPACE = ' ',
+            CHR_PIT = 'O',
+            CHR_PLAYER = 'A',
+            CHR_BATTERY = 'B'
+        }
+
+        private Random GameRandomiser = new Random(); 
 
         //Constructor & Destructor
         public GameWorld(int int_GameWorldSize, int int_NumOfBatteries)
         {
-            Random Rnd = new Random();
-
             // Setting properties
+            WorldSize = Math.Abs(int_GameWorldSize);
+            NumOfBatteries = Math.Abs(int_NumOfBatteries);
+            NumOfTurns = 2 * NumOfBatteries;
             Won = false;
-            WorldSize = int_GameWorldSize;
-            NumOfBatteries = int_NumOfBatteries;
             World = new char[int_GameWorldSize, int_GameWorldSize];
 
             //Creating the display
             for (int x = 0; x < WorldSize; x++)
                 for(int y = 0; y < WorldSize; y++)
-                {
-                    // setting traps
-                    if (Rnd.Next(100) < PitSpawnChance)
-                        World[x, y] = 'X';
-                    else
-                        World[x, y] = ' ';
-                }
+                    World[y, x] = (GameRandomiser.Next(100) < PitSpawnChance) 
+                        ? (char)GAME_CHARACTER.CHR_PIT 
+                        : (char)GAME_CHARACTER.CHR_EMPTY_SPACE;
+
+            //Saving the player coordinates & saving them in the world
+            Player1 = new Player(RandomCoordinates());
+            World[Player1.Coordinates.Y, Player1.Coordinates.X] = (char)GAME_CHARACTER.CHR_PLAYER;
+
+
+            //Instantiating Batteries & saving them in the world
+            Batteries = new Coordinates[int_NumOfBatteries];
+            for (int i = 0; i < Batteries.Length; i++)
+            {
+                Batteries[i] = RandomCoordinates();
+                World[Batteries[i].Y, Batteries[i].X] = (char)GAME_CHARACTER.CHR_BATTERY;
+            }
         }
 
         // Mehthods
@@ -100,6 +146,18 @@ namespace console_game
             for (int i = 0; i < WorldSize; i++)
                 Console.Write("-");
             Console.Write("\n");
+        }
+        
+        private Coordinates RandomCoordinates()
+        {
+            while(true)
+            {
+                int RandomX = GameRandomiser.Next(WorldSize);
+                int RandomY = GameRandomiser.Next(WorldSize);
+
+                if (World[RandomY, RandomX] == (char)GAME_CHARACTER.CHR_EMPTY_SPACE)
+                    return new Coordinates(RandomX, RandomY);
+            }
         }
     }
 }
