@@ -16,7 +16,34 @@ namespace console_game
                 int int_NumberOfBAatteries = Convert.ToInt32(args[1]);
 
                 GameWorld Game = new GameWorld(int_SizeOfEnvironment, int_NumberOfBAatteries);
-                Game.DsiplayWorld();
+                Console.Write("Move : ");
+
+                // Reaon I put an index of 0 is because I want the program to just take the first character in the string
+                // I used ToLower() incase the player inputs any capital letters
+                char Move = Console.ReadLine().ToLower()[0];
+
+                switch (Move)
+                {
+                    //Player pressed W
+                    case 'w':
+                        Game.PlayerMove(GameWorld.PLAYER_MOVE.W);
+                        break;
+
+                    //Player pressed S
+                    case 's':
+                        Game.PlayerMove(GameWorld.PLAYER_MOVE.S);
+                        break;
+
+                    // Player pressed A
+                    case 'a':
+                        Game.PlayerMove(GameWorld.PLAYER_MOVE.A);
+                        break;
+
+                    // Player pressed D
+                    case 'd':
+                        Game.PlayerMove(GameWorld.PLAYER_MOVE.D);
+                        break;
+                }
             }
             catch(FormatException e)
             {
@@ -69,7 +96,13 @@ namespace console_game
                 NumOfBatteries = 1;
             }
         }
-
+        public enum PLAYER_MOVE
+        {
+            W,
+            A,
+            S,
+            D
+        }
         private Player Player1 { get; }
         Coordinates[] Batteries;
 
@@ -118,7 +151,26 @@ namespace console_game
         }
 
         // Mehthods
-        public void DsiplayWorld()
+        public void PlayerMove(PLAYER_MOVE Move)
+        {
+            switch (Move)
+            {
+                case PLAYER_MOVE.W:
+                    Console.WriteLine("Moved up");
+                    break;
+                case PLAYER_MOVE.S:
+                    Console.WriteLine("Moved down");
+                    break;
+                case PLAYER_MOVE.A:
+                    Console.WriteLine("Moved left");
+                    break;
+                case PLAYER_MOVE.D:
+                    Console.WriteLine("Moved right");
+                    break;
+            }
+        }
+
+        public void DisplayWorld()
         {
             DsiplayVerticalWall();
 
