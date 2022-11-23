@@ -10,13 +10,28 @@ namespace console_game
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Hello world");
+            try
+            {
+                int int_SizeOfEnvironment = Convert.ToInt32(args[0]);
+                int int_NumberOfBAatteries = Convert.ToInt32(args[5]);
+            }
+            catch(FormatException e)
+            {
+                Console.WriteLine("Please input numbers for your command lines arguments");
 
-            Console.ReadLine();
-        }
-
-        static class GameWorld{
-            
+            }catch(IndexOutOfRangeException e)
+            {
+                Console.WriteLine("Please input 2 command line arguments");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("There has been an err : " + e.Message);
+            }
+            finally
+            {
+                Console.Write("\nPress Enter To Exit : ");
+                Console.ReadLine();
+            }
         }
     }
 }
