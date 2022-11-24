@@ -16,34 +16,59 @@ namespace console_game
                 int int_NumberOfBAatteries = Convert.ToInt32(args[1]);
 
                 GameWorld Game = new GameWorld(int_SizeOfEnvironment, int_NumberOfBAatteries);
-                Console.Write("Move : ");
+                bool bln_continue = true;
 
-                // Reaon I put an index of 0 is because I want the program to just take the first character in the string
-                // I used ToLower() incase the player inputs any capital letters
-                char Move = Console.ReadLine().ToLower()[0];
-
-                switch (Move)
+                while (bln_continue)
                 {
-                    //Player pressed W
-                    case 'w':
-                        Game.PlayerMove(GameWorld.PLAYER_MOVE.W);
-                        break;
+                    Console.Clear();
 
-                    //Player pressed S
-                    case 's':
-                        Game.PlayerMove(GameWorld.PLAYER_MOVE.S);
-                        break;
+                    // Reaon I put an index of 0 is because I want the program to just take the first character in the string
+                    // I used ToLower() incase the player inputs any capital letters
+                    Game.DisplayGame();
+                    Console.Write("\nMove : ");
+                    string Input = Console.ReadLine().ToLower().Trim();
+                    char Move = Input == "" ? '\0' : Input[0];
 
-                    // Player pressed A
-                    case 'a':
-                        Game.PlayerMove(GameWorld.PLAYER_MOVE.A);
-                        break;
+                    switch (Move)
+                    {
+                        //Player pressed W
+                        case 'w':
+                            Game.PlayerMove(GameWorld.PLAYER_MOVE.W);
+                            break;
 
-                    // Player pressed D
-                    case 'd':
-                        Game.PlayerMove(GameWorld.PLAYER_MOVE.D);
-                        break;
+                        //Player pressed S
+                        case 's':
+                            Game.PlayerMove(GameWorld.PLAYER_MOVE.S);
+                            break;
+
+                        // Player pressed A
+                        case 'a':
+                            Game.PlayerMove(GameWorld.PLAYER_MOVE.A);
+                            break;
+
+                        // Player pressed D
+                        case 'd':
+                            Game.PlayerMove(GameWorld.PLAYER_MOVE.D);
+                            break;
+
+                        case 'e':
+                            Game.PlayerMove(GameWorld.PLAYER_MOVE.E);
+                            break;
+
+                        //Player quit
+                        case 'x':
+                            bln_continue = false;
+                            break;
+
+                        // Player pressed wrong key
+                        default:
+                            Console.Clear();
+                            Console.WriteLine("You need to input a valid key\n\nPress Enter to continue the game ");
+                            Console.ReadLine();
+                            break;
+                    }  
                 }
+
             }
             catch(FormatException e)
             {
@@ -88,12 +113,22 @@ namespace console_game
             //Player properties
             public Coordinates Coordinates { get; set; }
             public int NumOfBatteries { get; }
+            private bool TorchState;
+            public bool TorchOn { get {
+                    return TorchState;
+            } }
 
             //Player constructor
             public Player(Coordinates newCoordinates)
             {
                 Coordinates = newCoordinates;
                 NumOfBatteries = 1;
+                TorchState = true;
+            }
+
+            public void FlickTorch()
+            {
+                TorchState = !TorchState;
             }
         }
         public enum PLAYER_MOVE
@@ -101,13 +136,16 @@ namespace console_game
             W,
             A,
             S,
-            D
+            D,
+            E, //Flick switch
         }
         private Player Player1 { get; }
         Coordinates[] Batteries;
 
         private int NumOfTurns;
-        private bool Won;
+        public bool Won { get; }
+        public bool GameOver { get; }
+
         private const int PitSpawnChance = 15;
         private enum GAME_CHARACTER
         {
@@ -153,34 +191,73 @@ namespace console_game
         // Mehthods
         public void PlayerMove(PLAYER_MOVE Move)
         {
+            Coordinates FutureCoordinates;
+
             switch (Move)
             {
                 case PLAYER_MOVE.W:
-                    Console.WriteLine("Moved up");
+                    //Moving Up
+                    FutureCoordinates.X = Player1.Coordinates.X;
+                    FutureCoordinates.Y = Player1.Coordinates.Y - 1;
+                    
                     break;
                 case PLAYER_MOVE.S:
-                    Console.WriteLine("Moved down");
+                    //Moving Down
+                    FutureCoordinates.X = Player1.Coordinates.X;
+                    FutureCoordinates.Y = Player1.Coordinates.Y + 1;
+
                     break;
                 case PLAYER_MOVE.A:
-                    Console.WriteLine("Moved left");
+                    //Moving Left
+                    FutureCoordinates.X = Player1.Coordinates.X - 1;
+                    FutureCoordinates.Y = Player1.Coordinates.Y;
+
                     break;
-                case PLAYER_MOVE.D:
-                    Console.WriteLine("Moved right");
+                case PLAYER_MOVE.E:
+                    //Switching on/off light
+                    FutureCoordinates.X = Player1.Coordinates.X;
+                    FutureCoordinates.Y = Player1.Coordinates.Y;
+                    Player1.FlickTorch();
+                    break;
+                default:
+                    //Moving Right
+                    FutureCoordinates.X = Player1.Coordinates.X + 1;
+                    FutureCoordinates.Y = Player1.Coordinates.Y;
                     break;
             }
+
+            //Checking if future coords are beyond the world
+            if (!InWorld(FutureCoordinates.X, FutureCoordinates.Y))
+                return;
+
+            // 1. Clearing the player's old position
+            // 2. Saving the player's new position & placing them in world
+            World[Player1.Coordinates.Y, Player1.Coordinates.X] = (char)GAME_CHARACTER.CHR_EMPTY_SPACE;
+            Player1.Coordinates = FutureCoordinates;
+            World[Player1.Coordinates.Y, Player1.Coordinates.X] = (char)GAME_CHARACTER.CHR_PLAYER;
         }
 
-        public void DisplayWorld()
+        public void DisplayGame()
         {
-            DsiplayVerticalWall();
+            //Displaying Player details
+            Console.WriteLine("Palyer Details" +
+                              "\n---------------" +
+                              "\nBatteries : " + Player1.NumOfBatteries +
+                              "\nTorch " + (Player1.TorchOn ? "ON" : "OFF") + "\n\n");
+
+            //Displaying world
+            DisplayHorizontalWall();
 
             for (int x = 0; x < WorldSize; x++)
             {
                 //Displaying left side wall
                 Console.Write("|");
 
+                // Include logic for torch on / off
                 for (int y = 0; y < WorldSize; y++)
-                    Console.Write(World[x, y]);
+                    Console.Write(InPlayerRadius(y, x) || Player1.TorchOn 
+                        ? World[x, y] 
+                        : (char)GAME_CHARACTER.CHR_EMPTY_SPACE);
 
                 //Displaying right side wall
                 Console.Write("|");
@@ -188,11 +265,11 @@ namespace console_game
                 Console.WriteLine();
             }
 
-            DsiplayVerticalWall();
+            DisplayHorizontalWall();
         }
 
         //Helper methods
-        private void DsiplayVerticalWall()
+        private void DisplayHorizontalWall()
         {
             Console.Write(" ");
             for (int i = 0; i < WorldSize; i++)
@@ -200,6 +277,23 @@ namespace console_game
             Console.Write("\n");
         }
         
+        private bool InWorld(int X, int Y)
+        {
+            bool xInBounds = 0 <= X && X < WorldSize;
+            bool yInBounds = 0 <= Y && Y < WorldSize;
+
+            return xInBounds && yInBounds;
+        }
+
+        private bool InPlayerRadius(int X, int Y)
+        {
+            //min <= val <= max
+            bool xInRadius = (Player1.Coordinates.X - 1) <= X && X <= (Player1.Coordinates.X + 1);
+            bool yInRadius = (Player1.Coordinates.Y - 1) <= Y && Y <= (Player1.Coordinates.Y + 1);
+
+            return xInRadius && yInRadius;
+        }
+
         private Coordinates RandomCoordinates()
         {
             while(true)
