@@ -112,7 +112,23 @@ namespace console_game
         {
             //Player properties
             public Coordinates Coordinates { get; set; }
-            public int NumOfBatteries { get; }
+            private int Cells;
+            public int NumOfBatteries { get {
+                    return Cells > 3 
+                        ? (Cells-3) / 3
+                        : 0;    
+            } }
+            public string TorchPercantage { get {
+                    string output = "";
+                    if (Cells == 3)
+                        output = "///";
+                    else {
+                        int CellsInTorch = Cells % 3;
+                        for (int i = 0; i < 3; i++)
+                            output += i < CellsInTorch ? "/" : " ";
+                    }
+                    return output;
+            } }
             private bool TorchState;
             public bool TorchOn { get {
                     return TorchState;
@@ -122,8 +138,18 @@ namespace console_game
             public Player(Coordinates newCoordinates)
             {
                 Coordinates = newCoordinates;
-                NumOfBatteries = 1;
+                Cells = 3;
                 TorchState = true;
+            }
+
+            public void PlayerMoved()
+            {
+                Cells-= Cells > 0 ? 1 : 0;
+
+                //Switching off torch if there are no cells left
+                TorchState = Cells > 0
+                    ? TorchState
+                    : false;
             }
 
             public void FlickTorch()
@@ -215,10 +241,8 @@ namespace console_game
                     break;
                 case PLAYER_MOVE.E:
                     //Switching on/off light
-                    FutureCoordinates.X = Player1.Coordinates.X;
-                    FutureCoordinates.Y = Player1.Coordinates.Y;
                     Player1.FlickTorch();
-                    break;
+                    return;
                 default:
                     //Moving Right
                     FutureCoordinates.X = Player1.Coordinates.X + 1;
@@ -230,20 +254,25 @@ namespace console_game
             if (!InWorld(FutureCoordinates.X, FutureCoordinates.Y))
                 return;
 
+            //Pickeing up battery functionality
+
             // 1. Clearing the player's old position
             // 2. Saving the player's new position & placing them in world
             World[Player1.Coordinates.Y, Player1.Coordinates.X] = (char)GAME_CHARACTER.CHR_EMPTY_SPACE;
             Player1.Coordinates = FutureCoordinates;
             World[Player1.Coordinates.Y, Player1.Coordinates.X] = (char)GAME_CHARACTER.CHR_PLAYER;
+
+            Player1.PlayerMoved();
         }
 
         public void DisplayGame()
         {
             //Displaying Player details
-            Console.WriteLine("Palyer Details" +
+            Console.WriteLine("Player Details" +
                               "\n---------------" +
-                              "\nBatteries : " + Player1.NumOfBatteries +
-                              "\nTorch " + (Player1.TorchOn ? "ON" : "OFF") + "\n\n");
+                              "\n Spare Batteries : " + Player1.NumOfBatteries +
+                              "\nTorch Percantage : [" + Player1.TorchPercantage + "}" +
+                              "\n           Torch : " + (Player1.TorchOn ? "ON" : "OFF") + "\n\n");
 
             //Displaying world
             DisplayHorizontalWall();
